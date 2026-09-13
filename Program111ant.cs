@@ -640,4 +640,4 @@ namespace ConsoleApp10
             return s.PadLeft(len);
         }
     }
-}        
+}
