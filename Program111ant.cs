@@ -1,10 +1,10 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 
 namespace ConsoleApp10
 {
-    
     public class NcFile
     {
         public string FileName;
@@ -23,18 +23,20 @@ namespace ConsoleApp10
         }
     }
 
-    
     class Program
     {
-        
-        const int W = 80;
-        const int H = 25;
-        const int Half = 40;
-        const int TopY = 1;
-        const int BoxH = 22;
-        const int Rows = 17;
 
-        
+        const int MinW = 40;
+        const int MinH = 10;
+
+        static int W = 80;
+        static int H = 25;
+        static int Half = 40;
+        static int TopY = 1;
+        static int BoxH = 22;
+        static int Rows = 17;
+        static int LeftCols = 3;
+
         const char HLine = '\u2550';
         const char VLine = '\u2551';
         const char UL = '\u2554';
@@ -51,7 +53,6 @@ namespace ConsoleApp10
 
             List<NcFile> all = MakeFileList();
 
-            
             List<NcFile> leftList = new List<NcFile>(all);
             List<NcFile> rightList = new List<NcFile>(all);
 
@@ -59,33 +60,127 @@ namespace ConsoleApp10
             rightList.Sort(SortByName);
 
             bool running = true;
+            int lastW = -1, lastH = -1;
+
             while (running)
             {
-                PaintMenu();
-                PaintLeft(leftList);
-                PaintRight(rightList);
-                PaintPrompt();
-                PaintFKeys();
-
-                Console.SetCursorPosition(6, 23);
-                Console.CursorVisible = true;
-
                 
-                ConsoleKeyInfo key = Console.ReadKey(true);
-                Console.CursorVisible = false;
+                UpdateLayout();
 
-                
-                if (key.Key == ConsoleKey.Escape || key.Key == ConsoleKey.F10)
+
+                if (W != lastW || H != lastH)
                 {
-                    running = false;
+                    SafeClear();
+                    lastW = W;
+                    lastH = H;
+                }
+
+                if (W < MinW || H < MinH)
+                {
+                    PaintTooSmall();
+                }
+                else
+                {
+                    PaintMenu();
+                    PaintLeft(leftList);
+                    PaintRight(rightList);
+                    PaintPrompt();
+                    PaintFKeys();
+
+                    SafeSetCursor(6, H - 2);
+                    Console.CursorVisible = true;
+                }
+
+
+                if (Console.KeyAvailable)
+                {
+                    Console.CursorVisible = false;
+                    ConsoleKeyInfo key = Console.ReadKey(true);
+
+                    if (key.Key == ConsoleKey.Escape || key.Key == ConsoleKey.F10)
+                        running = false;
+                }
+                else
+                {
+                    Thread.Sleep(80);
                 }
             }
 
-            
-            Console.Clear();
+            SafeClear();
             Console.CursorVisible = true;
             Console.ForegroundColor = ConsoleColor.Gray;
             Console.BackgroundColor = ConsoleColor.Black;
+        }
+
+        
+        static void UpdateLayout()
+        {
+            int cw, ch;
+            try
+            {
+                cw = Console.WindowWidth;
+                ch = Console.WindowHeight;
+            }
+            catch
+            {
+               
+                cw = W;
+                ch = H;
+            }
+
+            if (cw < 1) cw = 1;
+            if (ch < 1) ch = 1;
+
+            W = cw;
+            H = ch;
+
+            TopY = 1;
+            
+            BoxH = Math.Max(0, H - 3);
+            Half = W / 2;
+
+            
+            LeftCols = Math.Max(1, (Half - 1) / 13);
+            if (LeftCols > 3) LeftCols = 3;
+
+            
+            Rows = Math.Max(0, BoxH - 5);
+        }
+
+        static void SafeClear()
+        {
+            try { Console.Clear(); }
+            catch {  }
+        }
+
+        static void SafeSetCursor(int x, int y)
+        {
+            try
+            {
+                if (x >= 0 && y >= 0 && x < Console.BufferWidth && y < Console.BufferHeight)
+                    Console.SetCursorPosition(x, y);
+            }
+            catch { }
+        }
+
+        static void PaintTooSmall()
+        {
+            try
+            {
+                Console.BackgroundColor = ConsoleColor.Black;
+                Console.Clear();
+                Console.ForegroundColor = ConsoleColor.Red;
+
+                string msg = "Увеличьте окно консоли...";
+                if (msg.Length > W) msg = msg.Substring(0, W);
+
+                int y = Math.Max(0, H / 2);
+                int x = Math.Max(0, (W - msg.Length) / 2);
+
+                SafeSetCursor(x, y);
+                Console.Write(msg);
+            }
+            catch { }
         }
 
         static void PrepareWindow()
@@ -97,48 +192,17 @@ namespace ConsoleApp10
 
             try
             {
-               
                 Console.SetWindowSize(80, 25);
-
-               
                 Console.SetBufferSize(80, 25);
             }
-            catch (ArgumentOutOfRangeException)
+            catch
             {
-               
-                try
-                {
-                    int maxWidth = Math.Max(80, Console.WindowWidth);
-                    int maxHeight = Math.Max(25, Console.WindowHeight);
-
-                    Console.SetBufferSize(maxWidth, maxHeight);
-                    Console.SetWindowSize(80, 25);
-                }
-                catch
-                {
-                    
-                    Console.Clear();
-                    Console.WriteLine("Не удалось установить размер консоли 80x25.");
-                    Console.WriteLine("Программа будет работать с текущим размером окна.");
-                    Console.WriteLine("Нажмите любую клавишу для продолжения...");
-                    Console.ReadKey(true);
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.Clear();
-                Console.WriteLine($"Ошибка инициализации консоли: {ex.Message}");
-                Console.WriteLine("Попробуйте:");
-                Console.WriteLine("1. Уменьшить окно консоли (не разворачивать на весь экран)");
-                Console.WriteLine("2. Изменить шрифт на меньший размер");
-                Console.WriteLine("Нажмите любую клавишу для выхода...");
-                Console.ReadKey(true);
-                Environment.Exit(1);
+                
             }
 
             Console.BackgroundColor = ConsoleColor.Black;
             Console.ForegroundColor = ConsoleColor.Gray;
-            Console.Clear();
+            SafeClear();
         }
 
         static List<NcFile> MakeFileList()
@@ -296,130 +360,189 @@ namespace ConsoleApp10
                 pos = pos + menu[k].Length + 3;
             }
 
-            Put(75, 0, " 8 30", ConsoleColor.Black, ConsoleColor.Cyan);
+            string clock = " 8 30";
+            Put(Math.Max(0, W - clock.Length), 0, clock, ConsoleColor.Black, ConsoleColor.Cyan);
         }
 
         static void PaintLeft(List<NcFile> files)
         {
             int x0 = 0;
-            FillArea(x0, TopY, Half, BoxH, ConsoleColor.Cyan, ConsoleColor.DarkBlue);
-            PaintBox(x0, TopY, Half, BoxH);
-            PaintCaption(x0, TopY, Half, @"C:\NC", false);
-            PaintSplit(x0, TopY + 19, Half);
+            int w = Half;
+            FillArea(x0, TopY, w, BoxH, ConsoleColor.Cyan, ConsoleColor.DarkBlue);
+            PaintBox(x0, TopY, w, BoxH);
+            PaintCaption(x0, TopY, w, @"C:\NC", false);
 
-            string head = FitLeft("C:\u2193 Имя", 12) + Col + FitLeft("Имя", 12) + Col + FitLeft("Имя", 12);
-            Put(x0 + 1, TopY + 1, head, ConsoleColor.Yellow, ConsoleColor.DarkBlue);
+           
+            if (BoxH < 6 || Rows < 1 || w < 6)
+                return;
 
-            int maxShow = Rows * 3;
+            PaintSplit(x0, TopY + BoxH - 3, w);
+
+            int colW = Math.Max(4, (w - 2) / LeftCols);
+            int nameWidth = Math.Max(3, colW - 1);
+
+            StringBuilder head = new StringBuilder();
+            head.Append(FitLeft("C:\u2193 Имя", nameWidth));
+            for (int c = 1; c < LeftCols; c++)
+                head.Append(Col).Append(FitLeft("Имя", nameWidth));
+            Put(x0 + 1, TopY + 1, head.ToString(), ConsoleColor.Yellow, ConsoleColor.DarkBlue);
+
+            int maxShow = Rows * LeftCols;
             int count = Math.Min(files.Count, maxShow);
 
-            for (int c = 0; c < 3; c++)
+            for (int c = 0; c < LeftCols; c++)
             {
                 for (int r = 0; r < Rows; r++)
                 {
                     int yy = TopY + 2 + r;
-                    if (c < 2)
-                        Put(x0 + 13 + c * 13, yy, Col.ToString(), ConsoleColor.Cyan, ConsoleColor.DarkBlue);
+
+                    if (c < LeftCols - 1)
+                        Put(x0 + 1 + (c + 1) * colW - 1, yy, Col.ToString(), ConsoleColor.Cyan, ConsoleColor.DarkBlue);
 
                     int idx = c * Rows + r;
                     if (idx >= count)
                         continue;
 
                     NcFile f = files[idx];
-                    Put(x0 + 1 + c * 13, yy, MakeDosName(f.FileName), ColorOf(f), ConsoleColor.DarkBlue);
+                    Put(x0 + 1 + c * colW, yy, FitLeft(MakeDosName(f.FileName), nameWidth), ColorOf(f), ConsoleColor.DarkBlue);
                 }
             }
 
             if (files.Count > 0)
-                PaintStatus(x0 + 1, TopY + 20, files[0]);
+                PaintStatus(x0 + 1, TopY + BoxH - 2, files[0], w - 2);
         }
 
         static void PaintRight(List<NcFile> files)
         {
             int x0 = Half;
-            FillArea(x0, TopY, Half, BoxH, ConsoleColor.Cyan, ConsoleColor.DarkBlue);
-            PaintBox(x0, TopY, Half, BoxH);
-            PaintCaption(x0, TopY, Half, @"C:\NC", true);
-            PaintSplit(x0, TopY + 19, Half);
+            int w = W - Half;
+            FillArea(x0, TopY, w, BoxH, ConsoleColor.Cyan, ConsoleColor.DarkBlue);
+            PaintBox(x0, TopY, w, BoxH);
+            PaintCaption(x0, TopY, w, @"C:\NC", true);
 
-            Put(x0 + 1, TopY + 1, FitLeft("C:\u2193 Имя", 12), ConsoleColor.Yellow, ConsoleColor.DarkBlue);
-            Put(x0 + 13, TopY + 1, Col.ToString(), ConsoleColor.Yellow, ConsoleColor.DarkBlue);
-            Put(x0 + 14, TopY + 1, FitRight("Размер", 9), ConsoleColor.Yellow, ConsoleColor.DarkBlue);
-            Put(x0 + 23, TopY + 1, Col.ToString(), ConsoleColor.Yellow, ConsoleColor.DarkBlue);
-            Put(x0 + 24, TopY + 1, FitLeft("  Дата", 8), ConsoleColor.Yellow, ConsoleColor.DarkBlue);
-            Put(x0 + 32, TopY + 1, Col.ToString(), ConsoleColor.Yellow, ConsoleColor.DarkBlue);
-            Put(x0 + 33, TopY + 1, FitLeft(" Время", 6), ConsoleColor.Yellow, ConsoleColor.DarkBlue);
+            if (BoxH < 6 || Rows < 1 || w < 6)
+                return;
 
-            int count = Math.Min(files.Count, Rows);
+            PaintSplit(x0, TopY + BoxH - 3, w);
 
-            for (int i = 0; i < count; i++)
-                PaintRow(x0 + 1, TopY + 2 + i, files[i], i == 0);
+            
+            int avail = Math.Max(0, w - 2);
 
-            if (files.Count > 0)
-                PaintStatus(x0 + 1, TopY + 20, files[0]);
-        }
+           
+            var cols = new List<(string title, int width)>();
+            cols.Add(("C:\u2193 Имя", Math.Min(12, avail)));
 
-        static void PaintRow(int x, int y, NcFile f, bool selected)
-        {
-            ConsoleColor back = ConsoleColor.DarkBlue;
-            ConsoleColor front = ColorOf(f);
-            ConsoleColor line = ConsoleColor.Cyan;
+            if (avail >= 12 + 1 + 9) cols.Add(("Размер", 9));
+            if (avail >= 12 + 1 + 9 + 1 + 8) cols.Add(("  Дата", 8));
+            if (avail >= 12 + 1 + 9 + 1 + 8 + 1 + 6) cols.Add((" Время", 6));
 
-            if (selected)
+            int[] xOff = new int[cols.Count];
+            int cx = 0;
+            for (int i = 0; i < cols.Count; i++)
             {
-                back = ConsoleColor.Cyan;
-                front = ConsoleColor.Black;
-                line = ConsoleColor.Black;
+                xOff[i] = cx;
+                cx += cols[i].width + 1;
             }
 
-            string sizeStr = f.IsFolder ? "\u25BAКАТАЛОГ\u25C4" : f.FileSize.ToString();
-            ConsoleColor sizeCol = selected ? ConsoleColor.Black : (f.IsFolder ? ConsoleColor.Cyan : front);
+            for (int i = 0; i < cols.Count; i++)
+            {
+                Put(x0 + 1 + xOff[i], TopY + 1, FitLeft(cols[i].title, cols[i].width), ConsoleColor.Yellow, ConsoleColor.DarkBlue);
+                if (i < cols.Count - 1)
+                    Put(x0 + 1 + xOff[i] + cols[i].width, TopY + 1, Col.ToString(), ConsoleColor.Yellow, ConsoleColor.DarkBlue);
+            }
 
-            Put(x, y, MakeDosName(f.FileName), front, back);
-            Put(x + 12, y, Col.ToString(), line, back);
-            Put(x + 13, y, FitRight(sizeStr, 9), sizeCol, back);
-            Put(x + 22, y, Col.ToString(), line, back);
-            Put(x + 23, y, FitLeft(f.ModDate, 8), selected ? ConsoleColor.Black : ConsoleColor.Cyan, back);
-            Put(x + 31, y, Col.ToString(), line, back);
-            Put(x + 32, y, FitRight(f.ModTime, 6), selected ? ConsoleColor.Black : ConsoleColor.Cyan, back);
+            int count = Math.Min(files.Count, Rows);
+            for (int i = 0; i < count; i++)
+                PaintRow(x0 + 1, TopY + 2 + i, files[i], i == 0, cols, xOff);
+
+            if (files.Count > 0)
+                PaintStatus(x0 + 1, TopY + BoxH - 2, files[0], avail);
         }
 
-        static void PaintStatus(int x, int y, NcFile f)
+        static void PaintRow(int x, int y, NcFile f, bool selected, List<(string title, int width)> cols, int[] xOff)
         {
-            Put(x, y, new string(' ', 38), ConsoleColor.Cyan, ConsoleColor.DarkBlue);
-            Put(x, y, FitLeft(f.FileName, 12), ConsoleColor.Yellow, ConsoleColor.DarkBlue);
+            ConsoleColor back = selected ? ConsoleColor.Cyan : ConsoleColor.DarkBlue;
+            ConsoleColor front = selected ? ConsoleColor.Black : ColorOf(f);
+            ConsoleColor line = selected ? ConsoleColor.Black : ConsoleColor.Cyan;
+            ConsoleColor text = selected ? ConsoleColor.Black : ConsoleColor.Cyan;
+
+            for (int i = 0; i < cols.Count; i++)
+            {
+                string val;
+                ConsoleColor col;
+
+                switch (i)
+                {
+                    case 0:
+                        val = FitLeft(MakeDosName(f.FileName), cols[i].width);
+                        col = front;
+                        break;
+                    case 1:
+                        val = FitRight(f.IsFolder ? "\u25BAКАТАЛОГ\u25C4" : f.FileSize.ToString(), cols[i].width);
+                        col = selected ? ConsoleColor.Black : (f.IsFolder ? ConsoleColor.Cyan : front);
+                        break;
+                    case 2:
+                        val = FitLeft(f.ModDate, cols[i].width);
+                        col = text;
+                        break;
+                    default:
+                        val = FitRight(f.ModTime, cols[i].width);
+                        col = text;
+                        break;
+                }
+
+                Put(x + xOff[i], y, val, col, back);
+
+                if (i < cols.Count - 1)
+                    Put(x + xOff[i] + cols[i].width, y, Col.ToString(), line, back);
+            }
+        }
+
+        static void PaintStatus(int x, int y, NcFile f, int width)
+        {
+            if (width <= 0) return;
+
+            Put(x, y, new string(' ', width), ConsoleColor.Cyan, ConsoleColor.DarkBlue);
+            Put(x, y, FitLeft(f.FileName, Math.Min(12, width)), ConsoleColor.Yellow, ConsoleColor.DarkBlue);
 
             string mid = f.IsFolder ? "\u25BAКАТАЛОГ\u25C4" : f.FileSize.ToString();
 
-            Put(x + 12, y, FitRight(mid, 9), ConsoleColor.Cyan, ConsoleColor.DarkBlue);
-            Put(x + 22, y, " " + FitLeft(f.ModDate, 8), ConsoleColor.Cyan, ConsoleColor.DarkBlue);
-            Put(x + 31, y, " " + FitRight(f.ModTime, 5), ConsoleColor.Cyan, ConsoleColor.DarkBlue);
+            if (width > 12)
+                Put(x + 12, y, FitRight(mid, Math.Min(9, width - 12)), ConsoleColor.Cyan, ConsoleColor.DarkBlue);
+            if (width > 22)
+                Put(x + 22, y, " " + FitLeft(f.ModDate, Math.Min(8, width - 23)), ConsoleColor.Cyan, ConsoleColor.DarkBlue);
+            if (width > 31)
+                Put(x + 31, y, " " + FitRight(f.ModTime, Math.Min(5, width - 32)), ConsoleColor.Cyan, ConsoleColor.DarkBlue);
         }
 
         static void PaintPrompt()
         {
-            Put(0, 23, new string(' ', W), ConsoleColor.Gray, ConsoleColor.Black);
-            Put(0, 23, @"C:\NC>", ConsoleColor.Gray, ConsoleColor.Black);
+            int y = H - 2;
+            Put(0, y, new string(' ', W), ConsoleColor.Gray, ConsoleColor.Black);
+            Put(0, y, @"C:\NC>", ConsoleColor.Gray, ConsoleColor.Black);
         }
 
         static void PaintFKeys()
         {
-            Put(0, 24, new string(' ', W), ConsoleColor.White, ConsoleColor.Black);
+            int y = H - 1;
+            Put(0, y, new string(' ', W), ConsoleColor.White, ConsoleColor.Black);
 
             string[] names = { "Помощь", "Вызов", "Чтение", "Правка", "Копия", "НовИмя", "НовКат", "Удал-е", "Меню", "Выход" };
 
             int x = 0;
             for (int i = 0; i < names.Length; i++)
             {
+                if (x >= W) break;
+
                 string num = (i + 1).ToString();
-                Put(x, 24, num, ConsoleColor.White, ConsoleColor.Black);
+                Put(x, y, num, ConsoleColor.White, ConsoleColor.Black);
                 x += num.Length;
-                Put(x, 24, names[i], ConsoleColor.Black, ConsoleColor.Cyan);
+                Put(x, y, names[i], ConsoleColor.Black, ConsoleColor.Cyan);
                 x += names[i].Length;
 
                 if (i != names.Length - 1)
                 {
-                    Put(x, 24, " ", ConsoleColor.White, ConsoleColor.Black);
+                    Put(x, y, " ", ConsoleColor.White, ConsoleColor.Black);
                     x++;
                 }
             }
@@ -427,6 +550,8 @@ namespace ConsoleApp10
 
         static void PaintBox(int x, int y, int w, int h)
         {
+            if (w < 2 || h < 2) return;
+
             Put(x, y, UL.ToString(), ConsoleColor.Cyan, ConsoleColor.DarkBlue);
             for (int i = 1; i < w - 1; i++)
                 Put(x + i, y, HLine.ToString(), ConsoleColor.Cyan, ConsoleColor.DarkBlue);
@@ -446,6 +571,8 @@ namespace ConsoleApp10
 
         static void PaintSplit(int x, int y, int w)
         {
+            if (w < 2) return;
+
             Put(x, y, LT.ToString(), ConsoleColor.Cyan, ConsoleColor.DarkBlue);
             for (int i = 1; i < w - 1; i++)
                 Put(x + i, y, HLine.ToString(), ConsoleColor.Cyan, ConsoleColor.DarkBlue);
@@ -455,7 +582,9 @@ namespace ConsoleApp10
         static void PaintCaption(int boxX, int boxY, int boxW, string title, bool active)
         {
             string t = " " + title + " ";
-            int xx = boxX + (boxW - t.Length) / 2;
+            if (t.Length > boxW) t = t.Substring(0, Math.Max(0, boxW));
+
+            int xx = boxX + Math.Max(0, (boxW - t.Length) / 2);
             if (active)
                 Put(xx, boxY, t, ConsoleColor.Black, ConsoleColor.Cyan);
             else
@@ -464,6 +593,8 @@ namespace ConsoleApp10
 
         static void FillArea(int x, int y, int w, int h, ConsoleColor fg, ConsoleColor bg)
         {
+            if (w <= 0 || h <= 0) return;
+
             string line = new string(' ', w);
             for (int r = 0; r < h; r++)
                 Put(x, y + r, line, fg, bg);
@@ -471,21 +602,31 @@ namespace ConsoleApp10
 
         static void Put(int x, int y, string text, ConsoleColor fg, ConsoleColor bg)
         {
-            if (y < 0 || y >= H || x < 0)
+            if (string.IsNullOrEmpty(text))
+                return;
+            if (y < 0 || y >= H || x < 0 || x >= W)
                 return;
             if (x + text.Length > W)
                 text = text.Substring(0, W - x);
             if (text.Length == 0)
                 return;
 
-            Console.SetCursorPosition(x, y);
-            Console.ForegroundColor = fg;
-            Console.BackgroundColor = bg;
-            Console.Write(text);
+            try
+            {
+                Console.SetCursorPosition(x, y);
+                Console.ForegroundColor = fg;
+                Console.BackgroundColor = bg;
+                Console.Write(text);
+            }
+            catch
+            {
+               
+            }
         }
 
         static string FitLeft(string s, int len)
         {
+            if (len <= 0) return "";
             if (s.Length > len)
                 return s.Substring(0, len);
             return s.PadRight(len);
@@ -493,9 +634,10 @@ namespace ConsoleApp10
 
         static string FitRight(string s, int len)
         {
+            if (len <= 0) return "";
             if (s.Length > len)
                 return s.Substring(0, len);
             return s.PadLeft(len);
         }
     }
-}
+}        
