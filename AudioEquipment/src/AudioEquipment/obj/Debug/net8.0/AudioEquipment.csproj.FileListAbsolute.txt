@@ -1,0 +1,14 @@
+C:\Users\grigo\Downloads\Telegram Desktop\AudioEquipment_проект\AudioEquipment\src\AudioEquipment\bin\Debug\net8.0\AudioEquipment.exe
+C:\Users\grigo\Downloads\Telegram Desktop\AudioEquipment_проект\AudioEquipment\src\AudioEquipment\bin\Debug\net8.0\AudioEquipment.deps.json
+C:\Users\grigo\Downloads\Telegram Desktop\AudioEquipment_проект\AudioEquipment\src\AudioEquipment\bin\Debug\net8.0\AudioEquipment.runtimeconfig.json
+C:\Users\grigo\Downloads\Telegram Desktop\AudioEquipment_проект\AudioEquipment\src\AudioEquipment\bin\Debug\net8.0\AudioEquipment.dll
+C:\Users\grigo\Downloads\Telegram Desktop\AudioEquipment_проект\AudioEquipment\src\AudioEquipment\bin\Debug\net8.0\AudioEquipment.pdb
+C:\Users\grigo\Downloads\Telegram Desktop\AudioEquipment_проект\AudioEquipment\src\AudioEquipment\obj\Debug\net8.0\AudioEquipment.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\grigo\Downloads\Telegram Desktop\AudioEquipment_проект\AudioEquipment\src\AudioEquipment\obj\Debug\net8.0\AudioEquipment.AssemblyInfoInputs.cache
+C:\Users\grigo\Downloads\Telegram Desktop\AudioEquipment_проект\AudioEquipment\src\AudioEquipment\obj\Debug\net8.0\AudioEquipment.AssemblyInfo.cs
+C:\Users\grigo\Downloads\Telegram Desktop\AudioEquipment_проект\AudioEquipment\src\AudioEquipment\obj\Debug\net8.0\AudioEquipment.csproj.CoreCompileInputs.cache
+C:\Users\grigo\Downloads\Telegram Desktop\AudioEquipment_проект\AudioEquipment\src\AudioEquipment\obj\Debug\net8.0\AudioEquipment.dll
+C:\Users\grigo\Downloads\Telegram Desktop\AudioEquipment_проект\AudioEquipment\src\AudioEquipment\obj\Debug\net8.0\refint\AudioEquipment.dll
+C:\Users\grigo\Downloads\Telegram Desktop\AudioEquipment_проект\AudioEquipment\src\AudioEquipment\obj\Debug\net8.0\AudioEquipment.pdb
+C:\Users\grigo\Downloads\Telegram Desktop\AudioEquipment_проект\AudioEquipment\src\AudioEquipment\obj\Debug\net8.0\AudioEquipment.genruntimeconfig.cache
+C:\Users\grigo\Downloads\Telegram Desktop\AudioEquipment_проект\AudioEquipment\src\AudioEquipment\obj\Debug\net8.0\ref\AudioEquipment.dll
